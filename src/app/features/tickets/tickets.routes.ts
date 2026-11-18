@@ -1,0 +1,13 @@
+import { Routes } from '@angular/router';
+
+export const TICKET_ROUTES: Routes = [
+  {
+    path: '',
+    loadComponent: () => import('./pages/tickets').then((m) => m.Tickets),
+  },
+  {
+    path: ':id',
+    loadComponent: () =>
+      import('../ticket-detail/ticket-detail').then((m) => m.TicketDetail),
+  }
+];
