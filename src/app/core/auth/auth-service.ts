@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, catchError, of, tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { API_URL } from '../config/api.config';
 import { skipLoading } from '../http/http-context-tokens';
 import { ToastService } from '../toast/toast-service';
@@ -26,8 +26,9 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
-  private readonly _isLoggedIn = signal(false);
-  private readonly _role = signal<Role | null>(null);
+  // At startup we only read sessionStorage. No HTTP call.
+  private readonly _isLoggedIn = signal(this.tokens.getAccessToken() !== null);
+  private readonly _role = signal<Role | null>(this.readSavedRole());
 
   readonly isLoggedIn = this._isLoggedIn.asReadonly();
   readonly role = this._role.asReadonly();
@@ -47,11 +48,6 @@ export class AuthService {
         { withCredentials: true, context: skipLoading() },
       )
       .pipe(tap((res) => this.setSession(res)));
-  }
-
-  // Runs once when the app starts. If the cookie is still valid, the user stays logged in.
-  restoreSession(): Observable<unknown> {
-    return this.refresh().pipe(catchError(() => of(null)));
   }
 
   logout() {
@@ -74,6 +70,7 @@ export class AuthService {
 
   private setSession(res: LoginResponse) {
     this.tokens.setAccessToken(res.accessToken);
+    this.tokens.setUser(res.user);
     this._role.set(res.user.role);
     this._isLoggedIn.set(true);
   }
@@ -82,5 +79,10 @@ export class AuthService {
     this.tokens.clear();
     this._role.set(null);
     this._isLoggedIn.set(false);
+  }
+
+  private readSavedRole(): Role | null {
+    const role = this.tokens.getUser()?.role;
+    return role === 'ADMIN' || role === 'USER' ? role : null;
   }
 }

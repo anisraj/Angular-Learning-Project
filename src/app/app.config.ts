@@ -20,7 +20,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(
       withInterceptors([loadingInterceptor, errorInterceptor, refreshInterceptor, tokenInterceptor])
-    ),
-    provideAppInitializer(() => firstValueFrom(inject(AuthService).restoreSession()))
+    )
   ]
 };
